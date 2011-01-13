@@ -1,0 +1,12 @@
+Name: xmonad-hyperchoose
+Version: 0.0.1
+Synopsis: a XMonad.Layout.Choose replacement (or companion)
+License: BSD3
+Build-Type: Simple
+Cabal-Version: >= 1.2
+Stability: experimental
+
+Library
+    Build-Depends: base >= 4, xmonad >= 0.9
+    Exposed-Modules:
+        XMonad.Layout.HyperChoose

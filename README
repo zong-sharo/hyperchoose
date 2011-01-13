@@ -1,0 +1,18 @@
+HyperChoose
+===========
+a XMonad.Layout.Choose replacement (or companion)
+
+
+usage sample:
+add import somwhere in the begining of your xmonad.hs:
+    import XMonad.Layout.HyperChoose
+
+modify your layoutHook:
+    layoutHints $ smartBorders $ hyperChoose (Full ||| Mirror tiled) $ hyperChoose (Grid ||| Circle) Roledex
+
+add key binding:
+    ((modMask              , xK_b     ), sendMessage NextLayout')
+
+`FirstLayout'` message is also available
+
+now you can switch between 3 different groups of layouts.
