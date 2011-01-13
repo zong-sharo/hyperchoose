@@ -18,14 +18,12 @@ now you can switch between 3 different groups of layouts.
 Other Messages
 ==============
 `FirstLayout'` - jumps to the first layout
-`JumpToLayout "LayoutName"` - jumps to the first layout with such description
+`JumpToLayout "Layout Label"` - jumps to the first layout with such label
 
 Labels
 ======
-In some cases default descriptions is just not good enough, thus you can use `XMonad.Layout.HyperChoose.Label` to assign descriptions directly.
+You can label any layout or composition of layouts, for example:
 For example:
     myLayout = layoutHints $ smartBorders $
         hyperChoose (Label "Full & Mirror" $ Full ||| Mirror tiled) $
             hyperChoose (Label "Grid & Circle" $ Grid ||| Circle) (Label "Third Layout" Roledex)
-
-now you can switch to grid & circle layout by issuing `JumpToLayout "Grid & Circle"` message. no matter which of them is active.

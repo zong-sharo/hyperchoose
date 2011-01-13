@@ -9,6 +9,7 @@ import XMonad
 import XMonad.StackSet (Workspace(..))
 import Data.Maybe (fromMaybe)
 import Control.Monad (when)
+import XMonad.Layout.HyperChoose.Label
 
 
 data HyperChoose left right a = HyperChoose LR (left a) (right a) deriving (Show, Read, Eq, Ord)
@@ -21,16 +22,16 @@ data LR = L | R deriving (Read, Show, Eq, Ord)
 data NextNoWrap' = NextNoWrap' deriving (Eq, Show, Typeable)
 instance Message NextNoWrap'
 
-data ChangeLayout' = FirstLayout' | NextLayout' | JumpToLayout String deriving (Eq, Show, Typeable)
+data ChangeLayout' = FirstLayout' | NextLayout' deriving (Typeable)
 instance Message ChangeLayout'
 
 instance (LayoutClass left a, LayoutClass right a) => LayoutClass (HyperChoose left right) a where
     runLayout (Workspace id a@(HyperChoose L left right) stack) rect = do
         (tiles, left') <- runLayout (Workspace id left stack) rect
-        return (tiles, maybeUpdateLeft a left')
+        return (tiles, maybeSetLeft a left')
     runLayout (Workspace id a@(HyperChoose R left right) stack) rect = do
         (tiles, right') <- runLayout (Workspace id right stack) rect
-        return (tiles, maybeUpdateRight a right')
+        return (tiles, maybeSetRight a right')
 
     description (HyperChoose L left _) = description left
     description (HyperChoose R _ right) = description right
@@ -39,62 +40,57 @@ instance (LayoutClass left a, LayoutClass right a) => LayoutClass (HyperChoose l
         a' <- handleMessage a (SomeMessage NextNoWrap')
         maybe (handleMessage a (SomeMessage FirstLayout')) (return . Just) a'
 
-    handleMessage (HyperChoose L left right) msg | Just NextNoWrap' <- fromMessage msg = do
+    handleMessage a@(HyperChoose L left right) msg | Just NextNoWrap' <- fromMessage msg = do
          left' <- handleMessage left (SomeMessage NextNoWrap')
          case left' of
               Just left'' -> return $ Just $ HyperChoose L left'' right
-              Nothing     -> do
-                  left' <- handleMessage' left (SomeMessage Hide)
-                  right' <- handleMessage' right (SomeMessage FirstLayout')
-                  return $ Just $ HyperChoose R left' right'
+              Nothing     ->
+                  handleMessage right (SomeMessage FirstLayout') >>= updateToRight a
 
-    handleMessage a@(HyperChoose R _ right) msg | Just NextNoWrap' <- fromMessage msg = do
-         right' <- handleMessage right (SomeMessage NextNoWrap')
-         return $ maybeUpdateRight a right'
+    handleMessage a@(HyperChoose R _ right) msg | Just NextNoWrap' <- fromMessage msg =
+        maybeSetRight a `fmap` handleMessage right (SomeMessage NextNoWrap')
 
-    handleMessage a@(HyperChoose L left _) msg | Just FirstLayout' <- fromMessage msg = do
-        left' <- handleMessage left (SomeMessage FirstLayout')
-        return $ maybeUpdateLeft a left'
+    handleMessage a@(HyperChoose _ left _) msg | Just FirstLayout' <- fromMessage msg =
+        handleMessage left (SomeMessage FirstLayout') >>= updateToLeft a
 
-    handleMessage (HyperChoose R left right) msg | Just FirstLayout' <- fromMessage msg = do
-        left'  <- handleMessage' left (SomeMessage FirstLayout')
-        right' <- handleMessage' right (SomeMessage Hide)
-        return $ Just $ HyperChoose L left' right'
-
-    handleMessage (HyperChoose switch left right) msg | Just (JumpToLayout label) <- fromMessage msg = do
+    handleMessage a@(HyperChoose switch left right) msg | Just (JumpToLayout _) <- fromMessage msg = do
         left' <- handleMessage left msg
         right' <- handleMessage right msg
-        liftIO $ print (description left, description right, left, right, left', right')
-        if description left == label
-           then return $ Just $ HyperChoose L left right
-           else if description right == label
-           then return $ Just $ HyperChoose R left right
-           else do
-               left' <- handleMessage left msg
-               right' <- handleMessage right msg
-               case (left', right') of
-                    (Just left'', _)        -> return $ Just $ HyperChoose L left'' right
-                    (Nothing, Just right'') -> return $ Just $ HyperChoose R left right''
-                    otherwise               -> return Nothing
+        case (left', right') of -- TODO: Hide
+             (Just left'', _)        -> updateToLeft a left'
+             (Nothing, Just right'') -> updateToRight a right'
+             otherwise               -> return Nothing
 
     handleMessage a@(HyperChoose _ left right) msg | Just ReleaseResources <- fromMessage msg = do
         left' <- handleMessage left msg
         right' <- handleMessage right msg
-        return $ maybeUpdateLeft (fromMaybe a $ maybeUpdateRight a right') left'
+        return $ maybeSetLeft (fromMaybe a $ maybeSetRight a right') left'
 
     handleMessage a@(HyperChoose L left _) msg =
-        maybeUpdateLeft a `fmap` handleMessage left msg
+        maybeSetLeft a `fmap` handleMessage left msg
     handleMessage a@(HyperChoose R _ right) msg =
-        maybeUpdateRight a `fmap` handleMessage right msg
+        maybeSetRight a `fmap` handleMessage right msg
 
 
 handleMessage' :: LayoutClass layout a => layout a -> SomeMessage -> X (layout a)
 handleMessage' layout msg = fromMaybe layout `fmap` handleMessage layout msg
 
-maybeUpdateLeft :: (LayoutClass left a, LayoutClass right a) => HyperChoose left right a -> Maybe (left a) -> Maybe (HyperChoose left right a)
-maybeUpdateLeft (HyperChoose switch left right) (Just left') = Just $ HyperChoose switch left' right
-maybeUpdateLeft _ Nothing = Nothing
+maybeSetLeft :: (LayoutClass left a, LayoutClass right a) => HyperChoose left right a -> Maybe (left a) -> Maybe (HyperChoose left right a)
+maybeSetLeft (HyperChoose switch left right) (Just left') = Just $ HyperChoose switch left' right
+maybeSetLeft _ Nothing = Nothing
 
-maybeUpdateRight :: (LayoutClass left a, LayoutClass right a) => HyperChoose left right a -> Maybe (right a) -> Maybe (HyperChoose left right a)
-maybeUpdateRight (HyperChoose switch left right) (Just right') = Just $ HyperChoose switch left right' 
-maybeUpdateRight _ Nothing = Nothing
+maybeSetRight :: (LayoutClass left a, LayoutClass right a) => HyperChoose left right a -> Maybe (right a) -> Maybe (HyperChoose left right a)
+maybeSetRight (HyperChoose switch left right) (Just right') = Just $ HyperChoose switch left right' 
+maybeSetRight _ Nothing = Nothing
+
+-- | switches to the left side, replaces left with update (if present) and hides right if necessary
+updateToLeft :: (LayoutClass left a, LayoutClass right a) => HyperChoose left right a -> Maybe (left a) -> X (Maybe (HyperChoose left right a))
+updateToLeft (HyperChoose L _ right) left' = return $ (\left'' -> HyperChoose L left'' right) `fmap` left'
+updateToLeft (HyperChoose R left right) left' =
+    handleMessage' right (SomeMessage Hide) >>= return . Just . HyperChoose L (fromMaybe left left')
+
+updateToRight :: (LayoutClass left a, LayoutClass right a) => HyperChoose left right a -> Maybe (right a) -> X (Maybe (HyperChoose left right a))
+updateToRight (HyperChoose R left _) right' = return $ (HyperChoose R left) `fmap` right'
+updateToRight (HyperChoose L left right) right' = do
+    left' <- handleMessage' left (SomeMessage Hide)
+    return $ Just $ HyperChoose R left'(fromMaybe right right')
