@@ -13,6 +13,19 @@ modify your layoutHook:
 add key binding:
     ((modMask              , xK_b     ), sendMessage NextLayout')
 
-`FirstLayout'` message is also available
-
 now you can switch between 3 different groups of layouts.
+
+Other Messages
+==============
+`FirstLayout'` - jumps to the first layout
+`JumpToLayout "LayoutName"` - jumps to the first layout with such description
+
+Labels
+======
+In some cases default descriptions is just not good enough, thus you can use `XMonad.Layout.HyperChoose.Label` to assign descriptions directly.
+For example:
+    myLayout = layoutHints $ smartBorders $
+        hyperChoose (Label "Full & Mirror" $ Full ||| Mirror tiled) $
+            hyperChoose (Label "Grid & Circle" $ Grid ||| Circle) (Label "Third Layout" Roledex)
+
+now you can switch to grid & circle layout by issuing `JumpToLayout "Grid & Circle"` message. no matter which of them is active.

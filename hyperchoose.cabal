@@ -10,3 +10,4 @@ Library
     Build-Depends: base >= 4, xmonad >= 0.9
     Exposed-Modules:
         XMonad.Layout.HyperChoose
+        XMonad.Layout.HyperChoose.Label
