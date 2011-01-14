@@ -56,7 +56,7 @@ instance (LayoutClass left a, LayoutClass right a) => LayoutClass (HyperChoose l
     handleMessage a@(HyperChoose switch left right) msg | Just (JumpToLayout _) <- fromMessage msg = do
         left' <- handleMessage left msg
         right' <- handleMessage right msg
-        case (left', right') of -- TODO: Hide
+        case (left', right') of
              (Just left'', _)        -> updateToLeft a left'
              (Nothing, Just right'') -> updateToRight a right'
              otherwise               -> return Nothing
