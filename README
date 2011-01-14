@@ -13,7 +13,8 @@ modify your layoutHook:
 add key binding:
     ((modMask              , xK_b     ), sendMessage NextLayout')
 
-now you can switch between 3 different groups of layouts (Full ||| Mirror tiled, Grid ||| Circle, and Roledex)
+now you can switch between 3 different groups of layouts (`Full ||| Mirror tiled`, `Grid ||| Circle`, and `Roledex`)
+you can also use hyperChoose function instead of `<|||>`
 
 Other Messages
 ==============
@@ -25,5 +26,6 @@ Labels
 You can label any layout or composition of layouts, for example:
 For example:
     myLayout = layoutHints $ smartBorders $
-        hyperChoose (Label "Full & Mirror" $ Full ||| Mirror tiled) $
-            hyperChoose (Label "Grid & Circle" $ Grid ||| Circle) (Label "Third Layout" Roledex)
+        Full ||| Mirror tiled ~~ "Full & Tiled"
+        <|||> Grid ||| Circle ~~ "Grid & Circle"
+        <|||> Roledex ~~ "Roledex"

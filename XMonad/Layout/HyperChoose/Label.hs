@@ -2,6 +2,7 @@
 module XMonad.Layout.HyperChoose.Label
     ( Label(..)
     , JumpToLayout(..)
+    , (~~)
     ) where
 import XMonad
 import XMonad.StackSet (Workspace(..))
@@ -9,6 +10,10 @@ import XMonad.StackSet (Workspace(..))
 
 data Label layout a = Label String (layout a)
      deriving (Show, Read, Eq, Ord)
+
+infix 4 ~~
+(~~) :: layout a -> String -> Label layout a
+(~~) = flip Label
 
 data JumpToLayout = JumpToLayout String deriving Typeable
 instance Message JumpToLayout
