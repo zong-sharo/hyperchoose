@@ -4,6 +4,7 @@ module XMonad.Layout.HyperChoose
     , NextNoWrap'(..)
     , ChangeLayout'(..)
     , hyperChoose
+    , (<|||>)
     ) where
 import XMonad
 import XMonad.StackSet (Workspace(..))
@@ -14,8 +15,11 @@ import XMonad.Layout.HyperChoose.Label
 
 data HyperChoose left right a = HyperChoose LR (left a) (right a) deriving (Show, Read, Eq, Ord)
 
-hyperChoose :: left a -> right a -> HyperChoose left right a
+infixr 4 <|||>
+(<|||>), hyperChoose :: left a -> right a -> HyperChoose left right a
 hyperChoose = HyperChoose L
+
+(<|||>) = hyperChoose
     
 data LR = L | R deriving (Read, Show, Eq, Ord)
 

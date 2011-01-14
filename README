@@ -8,12 +8,12 @@ add import somwhere in the begining of your xmonad.hs:
     import XMonad.Layout.HyperChoose
 
 modify your layoutHook:
-    layoutHints $ smartBorders $ hyperChoose (Full ||| Mirror tiled) $ hyperChoose (Grid ||| Circle) Roledex
+    layoutHints $ smartBorders $ Full ||| Mirror tiled <|||> Grid ||| Circle <|||> Roledex
 
 add key binding:
     ((modMask              , xK_b     ), sendMessage NextLayout')
 
-now you can switch between 3 different groups of layouts.
+now you can switch between 3 different groups of layouts (Full ||| Mirror tiled, Grid ||| Circle, and Roledex)
 
 Other Messages
 ==============
